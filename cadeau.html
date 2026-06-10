@@ -25,53 +25,33 @@
     box-shadow: 0 32px 80px rgba(0,0,0,0.25);
     text-align: center;
   }
-  .logo {
-    font-family: 'DM Serif Display', serif;
-    font-size: 32px;
-    color: #FAF7F2;
-    margin-bottom: 32px;
-  }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 32px; color: #FAF7F2; margin-bottom: 32px; }
   .logo span { color: #C4714A; }
   .icon { font-size: 48px; margin-bottom: 20px; }
-  h1 {
-    font-size: 22px;
-    font-weight: 500;
-    color: #FAF7F2;
-    margin-bottom: 12px;
-    line-height: 1.4;
-  }
-  .from {
-    font-size: 14px;
-    color: rgba(250,247,242,0.45);
-    margin-bottom: 32px;
-    font-style: italic;
-  }
+  h1 { font-size: 22px; font-weight: 500; color: #FAF7F2; margin-bottom: 12px; line-height: 1.4; }
+  .from { font-size: 14px; color: rgba(250,247,242,0.45); margin-bottom: 24px; font-style: italic; }
   .message {
     background: rgba(250,247,242,0.06);
     border: 1px solid rgba(250,247,242,0.1);
-    border-radius: 12px;
+    border-left: 3px solid #C4714A;
+    border-radius: 8px;
     padding: 16px 20px;
     font-size: 15px;
     color: rgba(250,247,242,0.7);
     line-height: 1.7;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
     text-align: left;
     display: none;
+    font-style: italic;
   }
   .player {
     background: rgba(250,247,242,0.06);
     border: 1px solid rgba(250,247,242,0.1);
     border-radius: 16px;
     padding: 24px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
-  audio {
-    width: 100%;
-    outline: none;
-  }
-  audio::-webkit-media-controls-panel {
-    background: rgba(250,247,242,0.1);
-  }
+  audio { width: 100%; outline: none; }
   .download {
     display: inline-flex;
     align-items: center;
@@ -79,16 +59,16 @@
     color: rgba(250,247,242,0.4);
     font-size: 13px;
     text-decoration: none;
-    margin-top: 8px;
+    margin-top: 4px;
     transition: color 0.2s;
+    padding: 8px 16px;
+    border: 1px solid rgba(250,247,242,0.1);
+    border-radius: 8px;
   }
-  .download:hover { color: #C9A96E; }
-  .footer {
-    margin-top: 32px;
-    font-size: 12px;
-    color: rgba(250,247,242,0.2);
-  }
+  .download:hover { color: #C9A96E; border-color: rgba(201,169,110,0.3); }
+  .footer { margin-top: 28px; font-size: 12px; color: rgba(250,247,242,0.2); }
   .footer a { color: #C4714A; text-decoration: none; }
+  .error { color: #e57373; font-size: 13px; margin-top: 12px; display: none; }
 </style>
 </head>
 <body>
@@ -102,37 +82,42 @@
     <audio controls id="audio" preload="auto">
       Votre navigateur ne supporte pas la lecture audio.
     </audio>
+    <p class="error" id="error">⚠️ Impossible de charger l'audio — essayez le bouton télécharger ci-dessous.</p>
   </div>
-  <a class="download" id="download" href="#" download>
-    ⬇ Télécharger la chanson
-  </a>
-  <div class="footer">
-    Créé avec ♥ par <a href="https://melo.gift">Mélo</a>
-  </div>
+  <a class="download" id="download" href="#" download>⬇ Télécharger la chanson</a>
+  <div class="footer">Créé avec ♥ par <a href="https://melo.gift">Mélo</a></div>
 </div>
 
 <script>
   const params = new URLSearchParams(window.location.search);
-  const mp3 = params.get('mp3');
+  let mp3 = params.get('mp3') || '';
   const from = params.get('from');
   const dest = params.get('dest');
   const msg = params.get('msg');
-  const occasion = params.get('occasion');
 
-  if (dest) {
-    document.getElementById('title').textContent = 'Une chanson pour ' + dest;
+  // Convertir raw.githubusercontent.com → media direct via CDN
+  // raw.githubusercontent.com a des restrictions CORS pour l'audio
+  // On utilise github.com/.../raw/... qui redirige correctement
+  if (mp3.includes('raw.githubusercontent.com')) {
+    mp3 = mp3
+      .replace('https://raw.githubusercontent.com/', 'https://github.com/')
+      .replace('/main/', '/raw/main/');
   }
-  if (from) {
-    document.getElementById('from').textContent = 'Offerte par ' + from;
-  }
+
+  if (dest) document.getElementById('title').textContent = '🎁 Une chanson pour ' + dest;
+  if (from) document.getElementById('from').textContent = 'Offerte avec amour par ' + from;
   if (msg) {
     const msgEl = document.getElementById('message');
-    msgEl.textContent = '"' + msg + '"';
+    msgEl.textContent = '" ' + msg + ' "';
     msgEl.style.display = 'block';
   }
   if (mp3) {
-    document.getElementById('audio').src = mp3;
+    const audio = document.getElementById('audio');
+    audio.src = mp3;
     document.getElementById('download').href = mp3;
+    audio.onerror = function() {
+      document.getElementById('error').style.display = 'block';
+    };
   }
 </script>
 </body>
