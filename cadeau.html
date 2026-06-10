@@ -32,7 +32,6 @@
   .from { font-size: 14px; color: rgba(250,247,242,0.45); margin-bottom: 24px; font-style: italic; }
   .message {
     background: rgba(250,247,242,0.06);
-    border: 1px solid rgba(250,247,242,0.1);
     border-left: 3px solid #C4714A;
     border-radius: 8px;
     padding: 16px 20px;
@@ -44,80 +43,138 @@
     display: none;
     font-style: italic;
   }
-  .player {
+  .player-wrap {
     background: rgba(250,247,242,0.06);
     border: 1px solid rgba(250,247,242,0.1);
     border-radius: 16px;
-    padding: 24px;
+    padding: 28px 24px;
     margin-bottom: 20px;
+    cursor: pointer;
   }
-  audio { width: 100%; outline: none; }
+  .play-btn {
+    width: 64px; height: 64px;
+    background: #C4714A;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .play-btn:hover { background: #B5623B; transform: scale(1.05); }
+  .play-btn svg { width: 28px; height: 28px; fill: white; margin-left: 3px; }
+  .pause-icon { display: none; }
+  .play-btn.playing .play-icon { display: none; }
+  .play-btn.playing .pause-icon { display: block; }
+  .bars {
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: 3px; height: 24px; margin-bottom: 8px;
+  }
+  .bar {
+    width: 3px; background: #C4714A; border-radius: 2px;
+    opacity: 0.4; height: 4px; transition: height 0.1s;
+  }
+  .playing-label { font-size: 13px; color: rgba(250,247,242,0.4); }
+  @keyframes wave {
+    0% { height: 4px; } 100% { height: 20px; }
+  }
+  .bar.active:nth-child(1) { animation: wave 0.6s ease-in-out infinite alternate; opacity: 1; }
+  .bar.active:nth-child(2) { animation: wave 0.6s ease-in-out infinite alternate 0.1s; opacity: 1; }
+  .bar.active:nth-child(3) { animation: wave 0.6s ease-in-out infinite alternate 0.2s; opacity: 1; }
+  .bar.active:nth-child(4) { animation: wave 0.6s ease-in-out infinite alternate 0.05s; opacity: 1; }
+  .bar.active:nth-child(5) { animation: wave 0.6s ease-in-out infinite alternate 0.15s; opacity: 1; }
+  .bar.active:nth-child(6) { animation: wave 0.6s ease-in-out infinite alternate 0.25s; opacity: 1; }
+  .bar.active:nth-child(7) { animation: wave 0.6s ease-in-out infinite alternate 0.08s; opacity: 1; }
   .download {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: rgba(250,247,242,0.4);
-    font-size: 13px;
-    text-decoration: none;
-    margin-top: 4px;
-    transition: color 0.2s;
-    padding: 8px 16px;
-    border: 1px solid rgba(250,247,242,0.1);
-    border-radius: 8px;
+    display: inline-flex; align-items: center; gap: 8px;
+    color: rgba(250,247,242,0.4); font-size: 13px; text-decoration: none;
+    margin-top: 4px; transition: color 0.2s;
+    padding: 8px 16px; border: 1px solid rgba(250,247,242,0.1); border-radius: 8px;
   }
   .download:hover { color: #C9A96E; border-color: rgba(201,169,110,0.3); }
   .footer { margin-top: 28px; font-size: 12px; color: rgba(250,247,242,0.2); }
   .footer a { color: #C4714A; text-decoration: none; }
-  .error { color: #e57373; font-size: 13px; margin-top: 12px; display: none; }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="logo">M<span>é</span>lo</div>
-  <div class="icon">🎵</div>
+  <div class="icon">🎁</div>
   <h1 id="title">Une chanson rien que pour vous</h1>
   <p class="from" id="from"></p>
   <div class="message" id="message"></div>
-  <div class="player">
-    <audio controls id="audio" preload="auto">
-      Votre navigateur ne supporte pas la lecture audio.
-    </audio>
-    <p class="error" id="error">⚠️ Impossible de charger l'audio — essayez le bouton télécharger ci-dessous.</p>
+
+  <div class="player-wrap" onclick="togglePlay()">
+    <button class="play-btn" id="playBtn">
+      <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg class="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
+    <div class="bars" id="bars">
+      <div class="bar" id="b1"></div>
+      <div class="bar" id="b2"></div>
+      <div class="bar" id="b3"></div>
+      <div class="bar" id="b4"></div>
+      <div class="bar" id="b5"></div>
+      <div class="bar" id="b6"></div>
+      <div class="bar" id="b7"></div>
+    </div>
+    <div class="playing-label" id="label">Appuyez pour écouter</div>
   </div>
-  <a class="download" id="download" href="#" download>⬇ Télécharger la chanson</a>
+
+  <a class="download" id="dl" href="#" download>⬇ Télécharger la chanson</a>
   <div class="footer">Créé avec ♥ par <a href="https://melo.gift">Mélo</a></div>
 </div>
 
 <script>
-  const params = new URLSearchParams(window.location.search);
-  let mp3 = params.get('mp3') || '';
-  const from = params.get('from');
-  const dest = params.get('dest');
-  const msg = params.get('msg');
+  var audio = new Audio();
+  var playing = false;
+  var params = new URLSearchParams(window.location.search);
+  var mp3 = params.get('mp3') || '';
+  var from = params.get('from') || '';
+  var dest = params.get('dest') || '';
+  var msg = params.get('msg') || '';
 
-  // Convertir raw.githubusercontent.com → media direct via CDN
-  // raw.githubusercontent.com a des restrictions CORS pour l'audio
-  // On utilise github.com/.../raw/... qui redirige correctement
-  if (mp3.includes('raw.githubusercontent.com')) {
-    mp3 = mp3
-      .replace('https://raw.githubusercontent.com/', 'https://github.com/')
-      .replace('/main/', '/raw/main/');
-  }
-
-  if (dest) document.getElementById('title').textContent = '🎁 Une chanson pour ' + dest;
+  if (dest) document.getElementById('title').textContent = '🎵 Une chanson pour ' + dest;
   if (from) document.getElementById('from').textContent = 'Offerte avec amour par ' + from;
-  if (msg) {
-    const msgEl = document.getElementById('message');
-    msgEl.textContent = '" ' + msg + ' "';
-    msgEl.style.display = 'block';
+  if (msg && msg.trim()) {
+    var m = document.getElementById('message');
+    m.textContent = '" ' + msg + ' "';
+    m.style.display = 'block';
   }
   if (mp3) {
-    const audio = document.getElementById('audio');
     audio.src = mp3;
-    document.getElementById('download').href = mp3;
-    audio.onerror = function() {
-      document.getElementById('error').style.display = 'block';
-    };
+    audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
+    document.getElementById('dl').href = mp3;
+  }
+
+  audio.onended = function() { setPlaying(false); };
+
+  function togglePlay() {
+    if (!mp3) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      audio.play().catch(function(e) { console.log(e); });
+      setPlaying(true);
+    }
+  }
+
+  function setPlaying(state) {
+    playing = state;
+    var btn = document.getElementById('playBtn');
+    var bars = document.querySelectorAll('.bar');
+    var label = document.getElementById('label');
+    if (state) {
+      btn.classList.add('playing');
+      bars.forEach(function(b) { b.classList.add('active'); });
+      label.textContent = 'En cours de lecture...';
+    } else {
+      btn.classList.remove('playing');
+      bars.forEach(function(b) { b.classList.remove('active'); });
+      label.textContent = 'Appuyez pour écouter';
+    }
   }
 </script>
 </body>
