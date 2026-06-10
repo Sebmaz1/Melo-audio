@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mélo — Votre cadeau musical</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #F5F0EB;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: #1A1714;
+    border-radius: 24px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.25);
+    text-align: center;
+  }
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    color: #FAF7F2;
+    margin-bottom: 32px;
+  }
+  .logo span { color: #C4714A; }
+  .icon { font-size: 48px; margin-bottom: 20px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 500;
+    color: #FAF7F2;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .from {
+    font-size: 14px;
+    color: rgba(250,247,242,0.45);
+    margin-bottom: 32px;
+    font-style: italic;
+  }
+  .message {
+    background: rgba(250,247,242,0.06);
+    border: 1px solid rgba(250,247,242,0.1);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 15px;
+    color: rgba(250,247,242,0.7);
+    line-height: 1.7;
+    margin-bottom: 32px;
+    text-align: left;
+    display: none;
+  }
+  .player {
+    background: rgba(250,247,242,0.06);
+    border: 1px solid rgba(250,247,242,0.1);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  audio {
+    width: 100%;
+    outline: none;
+  }
+  audio::-webkit-media-controls-panel {
+    background: rgba(250,247,242,0.1);
+  }
+  .download {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(250,247,242,0.4);
+    font-size: 13px;
+    text-decoration: none;
+    margin-top: 8px;
+    transition: color 0.2s;
+  }
+  .download:hover { color: #C9A96E; }
+  .footer {
+    margin-top: 32px;
+    font-size: 12px;
+    color: rgba(250,247,242,0.2);
+  }
+  .footer a { color: #C4714A; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">M<span>é</span>lo</div>
+  <div class="icon">🎵</div>
+  <h1 id="title">Une chanson rien que pour vous</h1>
+  <p class="from" id="from"></p>
+  <div class="message" id="message"></div>
+  <div class="player">
+    <audio controls id="audio" preload="auto">
+      Votre navigateur ne supporte pas la lecture audio.
+    </audio>
+  </div>
+  <a class="download" id="download" href="#" download>
+    ⬇ Télécharger la chanson
+  </a>
+  <div class="footer">
+    Créé avec ♥ par <a href="https://melo.gift">Mélo</a>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const mp3 = params.get('mp3');
+  const from = params.get('from');
+  const dest = params.get('dest');
+  const msg = params.get('msg');
+  const occasion = params.get('occasion');
+
+  if (dest) {
+    document.getElementById('title').textContent = 'Une chanson pour ' + dest;
+  }
+  if (from) {
+    document.getElementById('from').textContent = 'Offerte par ' + from;
+  }
+  if (msg) {
+    const msgEl = document.getElementById('message');
+    msgEl.textContent = '"' + msg + '"';
+    msgEl.style.display = 'block';
+  }
+  if (mp3) {
+    document.getElementById('audio').src = mp3;
+    document.getElementById('download').href = mp3;
+  }
+</script>
+</body>
+</html>
