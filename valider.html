@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mélo — Envoi de votre cadeau</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #F5F0EB;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: #1A1714;
+    border-radius: 24px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.25);
+    text-align: center;
+  }
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    color: #FAF7F2;
+    margin-bottom: 32px;
+  }
+  .logo span { color: #C4714A; }
+  .icon { font-size: 48px; margin-bottom: 20px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 500;
+    color: #FAF7F2;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  p {
+    font-size: 15px;
+    color: rgba(250,247,242,0.55);
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+  .btn {
+    display: inline-block;
+    background: #C4714A;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 32px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+  }
+  .btn:hover { background: #B5623B; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status { margin-top: 24px; font-size: 14px; color: rgba(250,247,242,0.5); display: none; }
+  .status.success { color: #5cb85c; display: block; }
+  .status.error { color: #e57373; display: block; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">M<span>é</span>lo</div>
+  <div id="screen-confirm">
+    <div class="icon">🎁</div>
+    <h1 id="title">Envoyer votre chanson ?</h1>
+    <p id="desc">En cliquant ci-dessous, votre chanson personnalisée sera envoyée directement à <strong id="prenom-dest">votre proche</strong> avec votre message.</p>
+    <button class="btn" id="btn" onclick="valider()">✓ Envoyer maintenant</button>
+    <div class="status" id="status"></div>
+  </div>
+  <div id="screen-success" style="display:none">
+    <div class="icon">🎵</div>
+    <h1>Chanson envoyée !</h1>
+    <p>Votre proche vient de recevoir son cadeau musical. Merci d'avoir choisi Mélo.</p>
+  </div>
+</div>
+
+<script>
+  // Extraire les paramètres de l'URL
+  const params = new URLSearchParams(window.location.search);
+  const record_id = params.get('record_id');
+  const mp3_link = params.get('mp3_link');
+  const prenom_dest = params.get('prenom_dest');
+
+  // Afficher le prénom du destinataire
+  if (prenom_dest) {
+    document.getElementById('prenom-dest').textContent = prenom_dest;
+    document.getElementById('title').textContent = 'Envoyer la chanson à ' + prenom_dest + ' ?';
+  }
+
+  async function valider() {
+    const btn = document.getElementById('btn');
+    const status = document.getElementById('status');
+
+    if (!record_id || !mp3_link) {
+      status.className = 'status error';
+      status.textContent = '❌ Lien invalide — contactez support@melo.gift';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Envoi en cours...';
+
+    try {
+      const r = await fetch('https://hook.eu1.make.com/oxe70v6lzrnr5vwth07wy2hmpn4811pb', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          record_id: record_id,
+          mp3_link: mp3_link,
+          action: 'valider'
+        })
+      });
+      const t = await r.text();
+      if (t === 'Accepted') {
+        document.getElementById('screen-confirm').style.display = 'none';
+        document.getElementById('screen-success').style.display = 'block';
+      } else {
+        status.className = 'status error';
+        status.textContent = '❌ Erreur — contactez support@melo.gift';
+        btn.disabled = false;
+        btn.textContent = '✓ Envoyer maintenant';
+      }
+    } catch(e) {
+      status.className = 'status error';
+      status.textContent = '❌ Erreur réseau — réessayez';
+      btn.disabled = false;
+      btn.textContent = '✓ Envoyer maintenant';
+    }
+  }
+</script>
+</body>
+</html>
