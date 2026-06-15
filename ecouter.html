@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mélo — Votre chanson</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: #F5F0EB; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .card { background: #1A1714; border-radius: 24px; padding: 48px 40px; width: 100%; max-width: 460px; box-shadow: 0 32px 80px rgba(0,0,0,0.25); text-align: center; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 30px; color: #FAF7F2; margin-bottom: 28px; }
+  .logo span { color: #C4714A; }
+  .icon { font-size: 44px; margin-bottom: 16px; }
+  h1 { font-size: 20px; font-weight: 500; color: #FAF7F2; margin-bottom: 8px; line-height: 1.4; }
+  .sub { font-size: 13px; color: rgba(250,247,242,0.4); margin-bottom: 28px; }
+  .demo-card { background: rgba(250,247,242,0.06); border: 1px solid rgba(250,247,242,0.1); border-radius: 16px; padding: 24px 20px; margin-bottom: 16px; cursor: pointer; transition: all .2s; }
+  .demo-card:hover, .demo-card.playing { background: rgba(255,255,255,.09); border-color: #C4714A; }
+  .demo-top { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .demo-play { width: 52px; height: 52px; background: #C4714A; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .2s; }
+  .demo-card:hover .demo-play { background: #B5623B; }
+  .demo-play svg { width: 22px; height: 22px; fill: white; margin-left: 2px; }
+  .demo-info { text-align: left; }
+  .demo-title { font-size: 14px; font-weight: 500; color: #FAF7F2; margin-bottom: 3px; }
+  .demo-sub { font-size: 12px; color: rgba(250,247,242,0.35); }
+  .demo-progress { height: 3px; background: rgba(250,247,242,0.1); border-radius: 2px; overflow: hidden; }
+  .demo-progress-fill { height: 100%; width: 0%; background: #C4714A; border-radius: 2px; transition: width .1s linear; }
+  .demo-bars { display: flex; align-items: flex-end; gap: 2px; height: 18px; margin-left: auto; }
+  .demo-bar { width: 3px; background: #C4714A; border-radius: 2px; opacity: .35; height: 4px; }
+  @keyframes wave { 0%{height:4px}100%{height:16px} }
+  .demo-card.playing .demo-bar:nth-child(1){animation:wave .7s ease-in-out infinite alternate;opacity:1}
+  .demo-card.playing .demo-bar:nth-child(2){animation:wave .7s ease-in-out infinite alternate .1s;opacity:1}
+  .demo-card.playing .demo-bar:nth-child(3){animation:wave .7s ease-in-out infinite alternate .2s;opacity:1}
+  .demo-card.playing .demo-bar:nth-child(4){animation:wave .7s ease-in-out infinite alternate .05s;opacity:1}
+  .demo-card.playing .demo-bar:nth-child(5){animation:wave .7s ease-in-out infinite alternate .15s;opacity:1}
+  .dl-btn { display: inline-flex; align-items: center; gap: 8px; color: rgba(250,247,242,0.35); font-size: 13px; text-decoration: none; padding: 10px 20px; border: 1px solid rgba(250,247,242,0.1); border-radius: 8px; transition: all .2s; margin-top: 4px; cursor: pointer; background: transparent; font-family: 'DM Sans', sans-serif; }
+  .dl-btn:hover { color: #C9A96E; border-color: rgba(201,169,110,0.3); }
+  .footer { margin-top: 24px; font-size: 11px; color: rgba(250,247,242,0.18); }
+  .footer a { color: #C4714A; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">M<span>é</span>lo</div>
+  <div class="icon">🎵</div>
+  <h1 id="title">Votre chanson personnalisée</h1>
+  <p class="sub" id="sub">Qualité studio · Créée rien que pour vous</p>
+
+  <div class="demo-card" id="card" onclick="toggleTrack()">
+    <div class="demo-top">
+      <div class="demo-play">
+        <svg id="ico" viewBox="0 0 24 24"><path d="M2 1l10 7-10 7V1z"/></svg>
+      </div>
+      <div class="demo-info">
+        <div class="demo-title" id="track-title">Votre chanson</div>
+        <div class="demo-sub">Mélo · Qualité studio</div>
+      </div>
+      <div class="demo-bars">
+        <div class="demo-bar"></div><div class="demo-bar"></div>
+        <div class="demo-bar"></div><div class="demo-bar"></div>
+        <div class="demo-bar"></div>
+      </div>
+    </div>
+    <div class="demo-progress"><div class="demo-progress-fill" id="prog"></div></div>
+  </div>
+
+  <button class="dl-btn" onclick="downloadMP3()">⬇ Télécharger la chanson</button>
+  <div class="footer">Créé avec ♥ par <a href="https://melo.gift">Mélo</a></div>
+</div>
+
+<script>
+var gAudio = null;
+var gPlaying = false;
+var params = new URLSearchParams(window.location.search);
+var mp3src = params.get('mp3') || '';
+var occasion = params.get('occasion') || '';
+var prenom = params.get('prenom') || '';
+
+if (occasion) document.getElementById('title').textContent = '\uD83C\uDFB5 Votre chanson \u2014 ' + occasion;
+if (prenom) document.getElementById('sub').textContent = 'Pour ' + prenom + ' \u00b7 Qualit\u00e9 studio';
+
+function toggleTrack() {
+  if (!mp3src) return;
+  var card = document.getElementById('card');
+  var ico = document.getElementById('ico');
+  var prog = document.getElementById('prog');
+
+  if (gPlaying) {
+    if (gAudio) { gAudio.pause(); gAudio = null; }
+    card.classList.remove('playing');
+    ico.querySelector('path').setAttribute('d', 'M2 1l10 7-10 7V1z');
+    prog.style.width = '0%';
+    gPlaying = false;
+    return;
+  }
+
+  var a = document.createElement('audio');
+  a.preload = 'none';
+  a.src = mp3src;
+  gAudio = a;
+  gPlaying = true;
+  card.classList.add('playing');
+  ico.querySelector('path').setAttribute('d', 'M3 2h3v12H3zM8 2h3v12H8z');
+
+  a.addEventListener('timeupdate', function() {
+    if (a.duration) prog.style.width = (a.currentTime / a.duration * 100) + '%';
+  });
+  a.addEventListener('ended', function() {
+    card.classList.remove('playing');
+    ico.querySelector('path').setAttribute('d', 'M2 1l10 7-10 7V1z');
+    prog.style.width = '0%';
+    gAudio = null; gPlaying = false;
+  });
+  a.addEventListener('error', function() {
+    card.classList.remove('playing');
+    ico.querySelector('path').setAttribute('d', 'M2 1l10 7-10 7V1z');
+    gAudio = null; gPlaying = false;
+  });
+
+  a.load();
+  a.play().catch(function() {
+    a.addEventListener('canplay', function() { a.play().catch(function(){}); }, {once: true});
+  });
+}
+
+function downloadMP3() {
+  if (!mp3src) return;
+  var parts = mp3src.split('/');
+  var filename = decodeURIComponent(parts[parts.length - 1]);
+  if (!filename.endsWith('.mp3')) filename = 'melo-chanson.mp3';
+  fetch(mp3src)
+    .then(function(r) { return r.blob(); })
+    .then(function(blob) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    })
+    .catch(function() { window.open(mp3src, '_blank'); });
+}
+</script>
+</body>
+</html>
